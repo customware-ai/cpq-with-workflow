@@ -1,11 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import MainLayout from "../../../app/layouts/MainLayout";
+import { clearCpqWorkspaceFromStorage, seedCpqWorkspaceInStorage } from "../../../app/utils/cpq-storage";
 
 /**
- * Builds a memory router around the shared customer layout.
+ * Builds a memory router around the shared CPQ layout.
  */
 function createLayoutRouter(initialEntries: string[]): ReturnType<typeof createMemoryRouter> {
   return createMemoryRouter(
@@ -14,8 +15,9 @@ function createLayoutRouter(initialEntries: string[]): ReturnType<typeof createM
         path: "/",
         element: <MainLayout />,
         children: [
-          { index: true, element: <div>List body</div> },
-          { path: "customers/new", element: <div>New body</div> },
+          { index: true, element: <div>Dashboard body</div> },
+          { path: "estimates/:estimateId", element: <div>Estimate body</div> },
+          { path: "configure/:estimateId", element: <div>Configure body</div> },
         ],
       },
     ],
@@ -24,33 +26,40 @@ function createLayoutRouter(initialEntries: string[]): ReturnType<typeof createM
 }
 
 describe("main layout", () => {
-  it("renders customers page header content for root route", () => {
-    const router = createLayoutRouter(["/"]);
-    render(<RouterProvider router={router} />);
-
-    expect(
-      screen.getByRole("heading", { name: "Customers" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Manage customer records from the shared customer database."),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "New Customer" })).toBeInTheDocument();
-    expect(screen.getByText("List body")).toBeInTheDocument();
+  beforeEach(() => {
+    clearCpqWorkspaceFromStorage();
+    seedCpqWorkspaceInStorage();
   });
 
-  it("navigates to customer creation route from shared header action", async () => {
+  it("renders the CPQ shell navigation and workflow rail", async () => {
     const router = createLayoutRouter(["/"]);
     render(<RouterProvider router={router} />);
 
-    await userEvent.click(screen.getByRole("button", { name: "New Customer" }));
+    expect(await screen.findByText("Customware CPQ")).toBeInTheDocument();
+    expect(screen.getByText("Workflow")).toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: "Dashboard" })).toHaveLength(2);
+    expect(screen.getAllByRole("link", { name: "Estimates" })).toHaveLength(2);
+    expect(screen.getAllByRole("link", { name: "Configure" })).toHaveLength(2);
+    expect(screen.getByText("Dashboard body")).toBeInTheDocument();
+  });
 
-    expect(
-      await screen.findByRole("heading", { name: "New Customer" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Create a new customer record in the customer database."),
-    ).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "New Customer" })).toBeNull();
-    expect(screen.getByText("New body")).toBeInTheDocument();
+  it("navigates to the configure route from the workflow rail", async () => {
+    const router = createLayoutRouter(["/"]);
+    render(<RouterProvider router={router} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Equipment Selected" }));
+
+    expect(await screen.findByText("Configure body")).toBeInTheDocument();
+  });
+
+  it("toggles the persisted theme mode from the header control", async () => {
+    const router = createLayoutRouter(["/"]);
+    render(<RouterProvider router={router} />);
+
+    expect(document.documentElement.classList.contains("dark")).toBe(false);
+
+    await userEvent.click(screen.getByRole("button", { name: "Theme utility" }));
+
+    expect(document.documentElement.classList.contains("dark")).toBe(true);
   });
 });

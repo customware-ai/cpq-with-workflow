@@ -1,9 +1,9 @@
 import { TRPCError, initTRPC } from "@trpc/server";
 import {
-  CreateCustomerInputSchema,
-  ListCustomersFilterSchema,
-} from "../contracts/customer.js";
-import { createCustomer, listCustomers } from "../services/customer.js";
+  CreateEstimateInputSchema,
+  ListEstimatesFilterSchema,
+} from "../contracts/estimate.js";
+import { createEstimate, listEstimates } from "../services/estimate.js";
 import type { AppError } from "../types/errors.js";
 
 const t = initTRPC.create();
@@ -26,13 +26,13 @@ function toTrpcError(error: AppError): TRPCError {
 }
 
 /**
- * Minimal template router with one related customer example flow.
+ * Minimal template router with one related CPQ estimate example flow.
  */
 export const appRouter = t.router({
-  listCustomers: t.procedure
-    .input(ListCustomersFilterSchema.optional())
+  listEstimates: t.procedure
+    .input(ListEstimatesFilterSchema.optional())
     .query(async ({ input }) => {
-      const result = await listCustomers(input ?? {});
+      const result = await listEstimates(input ?? {});
       if (result.isErr()) {
         throw toTrpcError(result.error);
       }
@@ -40,10 +40,10 @@ export const appRouter = t.router({
       return result.value;
     }),
 
-  createCustomer: t.procedure
-    .input(CreateCustomerInputSchema)
+  createEstimate: t.procedure
+    .input(CreateEstimateInputSchema)
     .mutation(async ({ input }) => {
-      const result = await createCustomer(input);
+      const result = await createEstimate(input);
       if (result.isErr()) {
         throw toTrpcError(result.error);
       }

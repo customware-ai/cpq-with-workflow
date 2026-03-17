@@ -1,229 +1,325 @@
-import { Fragment } from "react";
-import type { ReactElement, ReactNode } from "react";
-import { Link, Outlet, useLocation, useNavigate } from "react-router";
-import { Moon, Plus, Sun, Users } from "lucide-react";
+import { useEffect, type ReactElement } from "react";
+import { Link, NavLink, Outlet, useLocation } from "react-router";
+import {
+  CircleHelp,
+  Menu,
+  Moon,
+  RotateCcw,
+  Sun,
+  UserRound,
+} from "lucide-react";
+import { WorkflowRail } from "../components/cpq/WorkflowRail";
 import { Button } from "../components/ui/Button";
-import { Separator } from "../components/ui/Separator";
+import { Select } from "../components/ui/Select";
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarInset,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-  SidebarTrigger,
-} from "../components/ui/Sidebar";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "../components/ui/Breadcrumb";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "../components/ui/Sheet";
+import { getCurrentWorkflowStep, type UserRole } from "../lib/cpq-data";
+import { cn } from "../lib/utils";
+import { useCpqWorkspaceStorage } from "../utils/cpq-storage";
 
-interface BreadcrumbConfig {
+interface NavigationItem {
   label: string;
-  href?: string;
+  href: string;
+  matches: (pathname: string) => boolean;
 }
-
-interface HeaderConfig {
-  title: string;
-  description: string;
-  breadcrumbs: BreadcrumbConfig[];
-  showCreateAction: boolean;
-}
-
-interface MainHeaderProps {
-  title: string;
-  description: string;
-  actions?: ReactNode;
-}
-
-const navItems = [{ label: "Customers", href: "/", icon: Users }];
 
 /**
- * Resolves page-level header and breadcrumb content from the current route.
- * This centralizes layout metadata so routes only render page bodies.
+ * Resolves the create shortcut target from the active workspace.
  */
-function getHeaderConfig(pathname: string): HeaderConfig {
-  if (pathname === "/customers/new") {
-    return {
-      title: "New Customer",
-      description: "Create a new customer record in local storage.",
-      breadcrumbs: [
-        { label: "Customers", href: "/" },
-        { label: "New Customer" },
-      ],
-      showCreateAction: false,
-    };
-  }
-
-  return {
-    title: "Customers",
-    description: "Manage customer records stored in your browser.",
-    breadcrumbs: [{ label: "Customers" }],
-    showCreateAction: true,
-  };
+function getCreateHref(activeEstimateId: string): string {
+  return `/configure/${activeEstimateId}`;
 }
 
 /**
- * Renders the main page header section used by customer pages.
+ * Extracts the estimate id from the route so the shell stays synced with the
+ * current workspace context.
  */
-function MainHeader({
-  title,
-  description,
-  actions,
-}: MainHeaderProps): ReactElement {
-  return (
-    <div className="mb-6">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-          <p className="text-sm text-muted-foreground">{description}</p>
-        </div>
-        {actions && <div className="flex items-center gap-2">{actions}</div>}
-      </div>
-    </div>
-  );
+function getEstimateIdFromPathname(pathname: string): string | null {
+  const match = pathname.match(/^\/(?:estimates|configure)\/([^/?#]+)/);
+  return match?.[1] ?? null;
 }
 
 /**
- * Shared application layout route with integrated shell and page header.
+ * Shared CPQ application shell.
  */
 export default function MainLayout(): ReactElement {
   const location = useLocation();
-  const navigate = useNavigate();
-  const headerConfig = getHeaderConfig(location.pathname);
-  const createCustomerAction = headerConfig.showCreateAction ? (
-    <Button variant="default" onClick={() => navigate("/customers/new")}>
-      <Plus className="mr-2 h-4 w-4" />
-      New Customer
-    </Button>
-  ) : undefined;
+  const {
+    workspace,
+    resetWorkspace,
+    setActiveEstimate,
+    setActiveRole,
+    setActiveWorkflowStep,
+    advanceWorkflow,
+    toggleThemeMode,
+  } = useCpqWorkspaceStorage();
+  const createHref = getCreateHref(workspace.active_estimate_id);
+  const currentWorkflowStep = getCurrentWorkflowStep(workspace);
+  const navigationItems: NavigationItem[] = [
+    {
+      label: "Dashboard",
+      href: "/",
+      matches: (pathname: string): boolean => pathname === "/",
+    },
+    {
+      label: "Estimates",
+      href: `/estimates/${workspace.active_estimate_id}`,
+      matches: (pathname: string): boolean => pathname.startsWith("/estimates"),
+    },
+    {
+      label: "Configure",
+      href: `/configure/${workspace.active_estimate_id}`,
+      matches: (pathname: string): boolean => pathname.startsWith("/configure"),
+    },
+  ];
 
-  const toggleTheme = (): void => {
-    document.documentElement.classList.toggle("dark");
-  };
+  /**
+   * The shell owns the document theme because the browser bootstrap script only
+   * knows about system preference, not the persisted demo toggle.
+   */
+  useEffect((): void => {
+    document.documentElement.classList.toggle(
+      "dark",
+      workspace.ui.theme_mode === "dark",
+    );
+  }, [workspace.ui.theme_mode]);
+
+  /**
+   * Syncing the active estimate with the current route keeps header shortcuts and
+   * workflow actions pointed at the right record.
+   */
+  useEffect((): void => {
+    const routeEstimateId = getEstimateIdFromPathname(location.pathname);
+    if (routeEstimateId && routeEstimateId !== workspace.active_estimate_id) {
+      setActiveEstimate(routeEstimateId);
+    }
+  }, [location.pathname, setActiveEstimate, workspace.active_estimate_id]);
 
   return (
-    <SidebarProvider>
-      <Sidebar collapsible="icon">
-        <SidebarHeader>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton size="lg" asChild>
-                <Link to="/">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                    <span className="text-sm font-bold">C</span>
-                  </div>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">Customware</span>
-                    <span className="truncate text-xs text-muted-foreground">
-                      Enterprise
-                    </span>
-                  </div>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarHeader>
-
-        <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupLabel>Sales</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {navItems.map((item) => (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={
-                        item.href === "/"
-                          ? location.pathname === "/" ||
-                            location.pathname.startsWith("/customers")
-                          : location.pathname.startsWith(item.href)
-                      }
-                      tooltip={item.label}
-                    >
-                      <Link to={item.href}>
-                        <item.icon />
-                        <span>{item.label}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </SidebarContent>
-
-        <SidebarFooter>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton onClick={toggleTheme} tooltip="Toggle theme">
-                <Sun className="rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                <Moon className="absolute rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                <span>Toggle theme</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarFooter>
-      </Sidebar>
-
-      <SidebarInset>
-        <header className="flex h-14 shrink-0 items-center gap-2 px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator
-            orientation="vertical"
-            className="mr-2 data-[orientation=vertical]:h-4"
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="flex min-h-screen">
+        <div className="hidden w-[252px] shrink-0 lg:block">
+          <WorkflowRail
+            workspace={workspace}
+            onSelectStep={setActiveWorkflowStep}
+            onAdvance={advanceWorkflow}
           />
+        </div>
 
-          {headerConfig.breadcrumbs.length > 0 && (
-            <Breadcrumb>
-              <BreadcrumbList>
-                {headerConfig.breadcrumbs.map((crumb, index) => (
-                  <Fragment key={crumb.href ?? crumb.label}>
-                    {index > 0 && <BreadcrumbSeparator />}
-                    <BreadcrumbItem>
-                      {crumb.href ? (
-                        <BreadcrumbLink asChild>
-                          <Link to={crumb.href}>{crumb.label}</Link>
-                        </BreadcrumbLink>
-                      ) : (
-                        <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
-                      )}
-                    </BreadcrumbItem>
-                  </Fragment>
+        <div className="flex min-h-screen min-w-0 flex-1 flex-col">
+          <header className="border-b border-stone-200 bg-card dark:border-stone-800">
+            <div className="flex h-14 items-center gap-3 px-4 lg:px-6">
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    className="lg:hidden"
+                    aria-label="Open workflow"
+                  >
+                    <Menu className="h-4 w-4" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[260px] p-0" showCloseButton={false}>
+                  <SheetHeader className="sr-only">
+                    <SheetTitle>Workflow</SheetTitle>
+                  </SheetHeader>
+                  <WorkflowRail
+                    workspace={workspace}
+                    className="border-r-0"
+                    onSelectStep={setActiveWorkflowStep}
+                    onAdvance={advanceWorkflow}
+                  />
+                </SheetContent>
+              </Sheet>
+
+              <Link
+                to="/"
+                className="flex min-w-0 items-center gap-3 text-stone-900 dark:text-stone-100"
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-md border border-stone-300 bg-stone-100 text-xs font-semibold dark:border-stone-700 dark:bg-stone-900">
+                  CW
+                </div>
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-semibold">
+                    Customware CPQ
+                  </div>
+                </div>
+              </Link>
+
+              <nav className="ml-4 hidden items-center gap-1 md:flex">
+                {navigationItems.map((item) => (
+                  <NavLink
+                    key={item.href}
+                    to={item.href}
+                    className={({ isActive }): string =>
+                      cn(
+                        "rounded-md px-3 py-2 text-sm font-medium text-stone-600 transition-colors duration-150 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-900 dark:hover:text-stone-100",
+                        (isActive || item.matches(location.pathname)) &&
+                          "bg-stone-100 text-stone-900 dark:bg-stone-900 dark:text-stone-100",
+                      )
+                    }
+                  >
+                    {item.label}
+                  </NavLink>
                 ))}
-              </BreadcrumbList>
-            </Breadcrumb>
-          )}
+              </nav>
 
-          <div className="ml-auto">
-            <Button variant="ghost" size="icon" onClick={toggleTheme}>
-              <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-              <span className="sr-only">Toggle theme</span>
-            </Button>
-          </div>
-        </header>
+              <div className="ml-auto flex items-center gap-2">
+                <Button asChild className="hidden md:inline-flex">
+                  <Link to={createHref}>Create</Link>
+                </Button>
 
-        <main className="flex-1 p-6">
-          <MainHeader
-            title={headerConfig.title}
-            description={headerConfig.description}
-            actions={createCustomerAction}
-          />
-          <Outlet />
-        </main>
-      </SidebarInset>
-    </SidebarProvider>
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="outline" className="hidden sm:inline-flex">
+                      <span>View as Role</span>
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent>
+                    <SheetHeader>
+                      <SheetTitle>Role Preview</SheetTitle>
+                      <SheetDescription>
+                        Switch the shell into a different CPQ role and preview the
+                        permissions that role would get.
+                      </SheetDescription>
+                    </SheetHeader>
+                    <div className="space-y-4 px-4 pb-4">
+                      <Select
+                        value={workspace.ui.active_role}
+                        onChange={(value: string): void =>
+                          setActiveRole(value as UserRole)
+                        }
+                        options={[
+                          { label: "Admin", value: "admin" },
+                          { label: "Estimator", value: "estimator" },
+                          { label: "Approver", value: "approver" },
+                          { label: "Viewer", value: "viewer" },
+                        ]}
+                      />
+                      <div className="rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-600 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-300">
+                        Active role:{" "}
+                        <span className="font-semibold capitalize text-stone-900 dark:text-stone-100">
+                          {workspace.ui.active_role}
+                        </span>
+                      </div>
+                    </div>
+                  </SheetContent>
+                </Sheet>
+
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="Theme utility"
+                  onClick={toggleThemeMode}
+                >
+                  {workspace.ui.theme_mode === "light" ? (
+                    <Moon className="h-4 w-4" />
+                  ) : (
+                    <Sun className="h-4 w-4" />
+                  )}
+                </Button>
+
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="ghost" size="icon-sm" aria-label="Help">
+                      <CircleHelp className="h-4 w-4" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent>
+                    <SheetHeader>
+                      <SheetTitle>Workspace Help</SheetTitle>
+                      <SheetDescription>
+                        This starter keeps all actions local-first. Every button
+                        either changes workspace state, navigates, or mocks a CPQ
+                        workflow outcome.
+                      </SheetDescription>
+                    </SheetHeader>
+                    <div className="space-y-3 px-4 pb-4 text-sm text-stone-600 dark:text-stone-300">
+                      <div className="rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 dark:border-stone-800 dark:bg-stone-900">
+                        Current workflow step:{" "}
+                        <span className="font-semibold text-stone-900 dark:text-stone-100">
+                          {currentWorkflowStep?.stepLabel ?? "Unavailable"}
+                        </span>
+                      </div>
+                      <div className="rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 dark:border-stone-800 dark:bg-stone-900">
+                        Use the left workflow rail to move through mocked stages,
+                        the role switcher to preview permissions, and the configure
+                        page to build quotes with persisted local data.
+                      </div>
+                    </div>
+                  </SheetContent>
+                </Sheet>
+
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="ghost" size="icon-sm" aria-label="User menu">
+                      <UserRound className="h-4 w-4" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent>
+                    <SheetHeader>
+                      <SheetTitle>Demo User</SheetTitle>
+                      <SheetDescription>
+                        Requestor workspace controls for the seeded CPQ starter.
+                      </SheetDescription>
+                    </SheetHeader>
+                    <div className="space-y-3 px-4 pb-4">
+                      <div className="rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-600 dark:border-stone-800 dark:bg-stone-900 dark:text-stone-300">
+                        Signed in as Demo User. Current role is{" "}
+                        <span className="font-semibold capitalize text-stone-900 dark:text-stone-100">
+                          {workspace.ui.active_role}
+                        </span>
+                        .
+                      </div>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-center"
+                        onClick={resetWorkspace}
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                        <span>Reset Workspace</span>
+                      </Button>
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              </div>
+            </div>
+
+            <div className="border-t border-stone-200 bg-stone-50 px-4 py-2 md:hidden dark:border-stone-800 dark:bg-stone-950">
+              <div className="flex items-center gap-2 overflow-x-auto">
+                {navigationItems.map((item) => (
+                  <NavLink
+                    key={item.href}
+                    to={item.href}
+                    className={({ isActive }): string =>
+                      cn(
+                        "whitespace-nowrap rounded-md px-3 py-1.5 text-sm text-stone-600 transition-colors duration-150 hover:bg-stone-100 hover:text-stone-900 dark:text-stone-300 dark:hover:bg-stone-900 dark:hover:text-stone-100",
+                        (isActive || item.matches(location.pathname)) &&
+                          "bg-stone-100 text-stone-900 dark:bg-stone-900 dark:text-stone-100",
+                      )
+                    }
+                  >
+                    {item.label}
+                  </NavLink>
+                ))}
+              </div>
+            </div>
+          </header>
+
+          <main className="min-w-0 flex-1 p-4 lg:p-6">
+            <div className="mx-auto w-full max-w-[1400px]">
+              <Outlet />
+            </div>
+          </main>
+        </div>
+      </div>
+    </div>
   );
 }

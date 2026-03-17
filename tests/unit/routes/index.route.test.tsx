@@ -1,77 +1,50 @@
-import { describe, expect, it, beforeEach, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router";
+import userEvent from "@testing-library/user-event";
+import { MemoryRouter, Route, Routes } from "react-router";
 import IndexPage from "../../../app/routes/index";
-import type { Customer } from "../../../server/contracts/customer.js";
+import { clearCpqWorkspaceFromStorage, seedCpqWorkspaceInStorage } from "../../../app/utils/cpq-storage";
 
-const listCustomersUseQueryMock = vi.fn();
-
-vi.mock("../../../app/lib/trpc", () => ({
-  trpc: {
-    listCustomers: {
-      useQuery: (...args: unknown[]): unknown => listCustomersUseQueryMock(...args),
-    },
-  },
-}));
-
-/**
- * Builds a customer fixture that matches the shared backend contract.
- */
-function createCustomerFixture(
-  overrides: Partial<Customer> = {},
-): Customer {
-  return {
-    id: 1,
-    company_name: "Globex",
-    email: "sales@globex.com",
-    phone: "+1 555 0100",
-    status: "active",
-    notes: null,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    ...overrides,
-  };
-}
-
-describe("customers index route", () => {
+describe("dashboard route", () => {
   beforeEach(() => {
-    listCustomersUseQueryMock.mockReset();
+    clearCpqWorkspaceFromStorage();
+    seedCpqWorkspaceInStorage();
   });
 
-  it("shows empty state when the backend returns no customers", async () => {
-    listCustomersUseQueryMock.mockReturnValue({
-      data: [],
-      error: null,
-      isError: false,
-      isLoading: false,
-    });
-
+  it("renders the seeded DR INC dashboard", async () => {
     render(
       <MemoryRouter>
         <IndexPage />
       </MemoryRouter>,
     );
 
+    expect(await screen.findByRole("heading", { name: "DR INC" })).toBeInTheDocument();
+    expect(screen.getByText("Account details and history")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Add Division" })).toBeInTheDocument();
     expect(
-      await screen.findByRole("heading", { name: "No customers found" }),
+      screen.getByRole("heading", { name: "Opportunities (2)" }),
     ).toBeInTheDocument();
+    expect(screen.getByText("DR INC - PM")).toBeInTheDocument();
   });
 
-  it("renders customers loaded from the backend", async () => {
-    listCustomersUseQueryMock.mockReturnValue({
-      data: [createCustomerFixture()],
-      error: null,
-      isError: false,
-      isLoading: false,
-    });
-
+  it("edits account details and creates a new division", async () => {
     render(
-      <MemoryRouter>
-        <IndexPage />
+      <MemoryRouter initialEntries={["/"]}>
+        <Routes>
+          <Route path="/" element={<IndexPage />} />
+          <Route path="/configure/:estimateId" element={<div>Configure workspace</div>} />
+        </Routes>
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText("Globex")).toBeInTheDocument();
-    expect(screen.getByText("1 of 1 customer(s)")).toBeInTheDocument();
+    const contactInput = await screen.findByRole("textbox", { name: "Contact Person" });
+    await userEvent.clear(contactInput);
+    await userEvent.type(contactInput, "Morgan Lee");
+
+    expect((contactInput as HTMLInputElement).value).toBe("Morgan Lee");
+
+    await userEvent.click(screen.getByRole("button", { name: "Add Division" }));
+
+    expect(await screen.findByText("Configure workspace")).toBeInTheDocument();
   });
 });

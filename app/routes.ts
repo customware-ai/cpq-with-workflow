@@ -1,8 +1,8 @@
 /**
  * Route Configuration
  *
- * Simplified SPA routes for customer list and customer creation.
- * Shared layout wraps all customer pages.
+ * Simplified SPA routes for the CPQ dashboard, estimate workspace, and
+ * configurator experience.
  */
 
 import {
@@ -28,6 +28,7 @@ attachGlobalFrontendErrorHandlers({ endpoint: "/logs" });
 export default [
   layout("layouts/MainLayout.tsx", [
     index("routes/index.tsx"),
-    route("customers/new", "routes/customers.new.tsx"),
+    route("estimates/:estimateId", "routes/estimates.$estimateId.tsx"),
+    route("configure/:estimateId", "routes/configure.$estimateId.tsx"),
   ]),
 ] satisfies RouteConfig;

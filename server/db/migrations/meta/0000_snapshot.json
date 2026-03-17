@@ -4,8 +4,8 @@
   "id": "6c252de5-4a25-4187-8f4b-a4f5815c9cd5",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
-    "customers": {
-      "name": "customers",
+    "estimates": {
+      "name": "estimates",
       "columns": {
         "id": {
           "name": "id",
@@ -14,18 +14,25 @@
           "notNull": true,
           "autoincrement": true
         },
-        "company_name": {
-          "name": "company_name",
+        "estimate_number": {
+          "name": "estimate_number",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "email": {
-          "name": "email",
+        "account_name": {
+          "name": "account_name",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "project_name": {
+          "name": "project_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
           "autoincrement": false
         },
         "status": {
@@ -34,7 +41,45 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'active'"
+          "default": "'draft'"
+        },
+        "workflow_stage": {
+          "name": "workflow_stage",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "item_count": {
+          "name": "item_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "total_value": {
+          "name": "total_value",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "margin_percent": {
+          "name": "margin_percent",
+          "type": "real",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "notes": {
+          "name": "notes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         },
         "created_at": {
           "name": "created_at",
@@ -54,17 +99,24 @@
         }
       },
       "indexes": {
-        "idx_customers_status": {
-          "name": "idx_customers_status",
+        "idx_estimates_status": {
+          "name": "idx_estimates_status",
           "columns": [
             "status"
           ],
           "isUnique": false
         },
-        "idx_customers_email": {
-          "name": "idx_customers_email",
+        "idx_estimates_number": {
+          "name": "idx_estimates_number",
           "columns": [
-            "email"
+            "estimate_number"
+          ],
+          "isUnique": false
+        },
+        "idx_estimates_account": {
+          "name": "idx_estimates_account",
+          "columns": [
+            "account_name"
           ],
           "isUnique": false
         }

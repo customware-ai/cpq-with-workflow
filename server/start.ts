@@ -5,10 +5,16 @@
  * It binds to the specified port and handles graceful shutdown.
  */
 
+import "dotenv/config";
 import { serve } from "@hono/node-server";
 import app from "./index.js";
+import { resolveServerPort } from "./utils/env.js";
 
-const PORT = process.env.PORT ? parseInt(process.env.PORT) : 8080;
+/**
+ * Port resolution stays centralized so runtime env behavior is consistent in
+ * local development, production startup, and tests.
+ */
+const PORT = resolveServerPort(process.env);
 
 console.log(`📡 tRPC endpoint: http://localhost:${PORT}/trpc`);
 console.log(`🏥 Health check: http://localhost:${PORT}/health`);

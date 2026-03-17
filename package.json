@@ -7,7 +7,7 @@
     "build:client": "react-router build",
     "build:server": "tsc --project server/tsconfig.json",
     "build": "npm run build:client && npm run build:server",
-    "start": "PORT=8080 node build/server/start.js",
+    "start": "node build/server/start.js",
     "typegen": "react-router typegen",
     "typecheck": "react-router typegen && tsc && tsc --project server/tsconfig.json",
     "lint": "oxlint --type-aware .",
@@ -30,6 +30,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "dotenv": "^17.3.1",
     "drizzle-orm": "^0.45.1",
     "embla-carousel-react": "^8.6.0",
     "hono": "^4.12.1",
@@ -52,10 +53,9 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@babel/core": "^7.29.0",
-    "@babel/preset-typescript": "^7.28.5",
     "@playwright/test": "1.58.2",
     "@react-router/dev": "7.13.0",
+    "@rolldown/plugin-babel": "^0.1.8",
     "@tailwindcss/vite": "4.1.18",
     "@testing-library/jest-dom": "6.9.1",
     "@testing-library/react": "16.3.0",
@@ -64,7 +64,7 @@
     "@types/node": "25.2.3",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
-    "@vitejs/plugin-react": "5.1.4",
+    "@vitejs/plugin-react": "6.0.0",
     "babel-plugin-react-compiler": "^1.0.0",
     "drizzle-kit": "^0.31.9",
     "jsdom": "28.0.0",
@@ -74,7 +74,6 @@
     "tsx": "4.21.0",
     "typescript": "5.9.3",
     "vite": "8.0.0",
-    "vite-plugin-babel": "^1.5.1",
     "vitest": "4.0.18"
   },
   "overrides": {

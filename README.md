@@ -29,7 +29,7 @@ The template demonstrates a simplified, modern stack with React Router v7, TypeS
 
 1. Study the patterns in `app/`, `server/`, and `tests/`
 2. Copy the structure into your own project
-3. Replace the example customer slice with your domain modules
+3. Replace the example estimate slice with your domain modules
 4. Keep strict contracts and Result-based error handling
 5. Follow [AGENTS.md](./AGENTS.md) for development workflow
 
@@ -37,8 +37,8 @@ The template demonstrates a simplified, modern stack with React Router v7, TypeS
 
 ### ✅ Fully Functional (Study These):
 
-- **UI shell and pages** - Shared `MainLayout` + customer list/create routes
-- **Server example slice** - `customer` contract/query/service/tRPC route chain
+- **UI shell and pages** - Shared `MainLayout` + CPQ dashboard/estimate/configure routes
+- **Server example slice** - `estimate` contract/query/service/tRPC route chain
 - **Database layer** - Drizzle schema + generated SQL migrations + runner
 - **Quality gates** - Typecheck, lint, build, and test workflows
 - **Component library** - Tested reusable UI building blocks
@@ -115,24 +115,25 @@ app/
 │   ├── trpc-provider.tsx      # Typed provider scaffolding
 │   └── utils.ts
 ├── routes/
-│   ├── index.tsx              # Customer list page
-│   └── customers.new.tsx      # Customer create page
+│   ├── index.tsx              # Account workflow dashboard
+│   ├── estimates.$estimateId.tsx # Estimate workspace page
+│   └── configure.$estimateId.tsx # Configure/build page
 ├── routes.ts                  # Route definitions
 └── root.tsx
 
 server/
 ├── contracts/
-│   ├── customer.ts            # Zod runtime contracts
+│   ├── estimate.ts            # Zod runtime contracts
 │   └── index.ts
 ├── db/
 │   ├── index.ts               # Drizzle + better-sqlite3 init
 │   ├── schemas.ts             # Drizzle table schema
 │   ├── queries/
-│   │   └── customers.ts       # Query layer (ResultAsync)
+│   │   └── estimates.ts       # Query layer (ResultAsync)
 │   ├── migrations/            # Generated SQL + drizzle metadata
 │   └── migrate.ts             # Migration runner
 ├── services/
-│   └── customer.ts            # Business logic
+│   └── estimate.ts            # Business logic
 ├── trpc/
 │   └── router.ts              # API procedures
 ├── types/
@@ -164,7 +165,7 @@ tests/
 
 ### Tables Implemented
 
-- `customers`
+- `estimates`
 
 This intentionally keeps one example table so teams can extend from a clean baseline.
 
@@ -205,10 +206,10 @@ All tests use Vitest (and React Testing Library for UI).
 
 The repository includes one cohesive example module:
 
-- **Customer**
-  - Contract: `server/contracts/customer.ts`
-  - Query: `server/db/queries/customers.ts`
-  - Service: `server/services/customer.ts`
+- **Estimate**
+  - Contract: `server/contracts/estimate.ts`
+  - Query: `server/db/queries/estimates.ts`
+  - Service: `server/services/estimate.ts`
   - API route: `server/trpc/router.ts`
 
 Use this as the canonical pattern when adding your own modules.
