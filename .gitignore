@@ -1,0 +1,16 @@
+.DS_Store
+.env
+/node_modules/
+
+.tmp/
+tmp/
+/.runtime.logs
+logs/
+
+# Local sqlite database files
+.dbs/
+
+# React Router
+/.react-router/
+/build/
+/dist/
