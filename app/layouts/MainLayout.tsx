@@ -1,16 +1,16 @@
-import { useEffect, useState, type ReactElement } from "react";
+import { useEffect, type ReactElement } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
+import { CircleHelp, Moon, RotateCcw, Sun, UserRound } from "lucide-react";
+import { WorkflowRail } from "~/components/cpq/WorkflowRail";
+import { Button } from "~/components/ui/Button";
+import { Select } from "~/components/ui/Select";
 import {
-  CircleHelp,
-  Menu,
-  Moon,
-  RotateCcw,
-  Sun,
-  UserRound,
-} from "lucide-react";
-import { WorkflowRail } from "../components/cpq/WorkflowRail";
-import { Button } from "../components/ui/Button";
-import { Select } from "../components/ui/Select";
+  Sidebar,
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+  useSidebar,
+} from "~/components/ui/Sidebar";
 import {
   Sheet,
   SheetContent,
@@ -18,10 +18,10 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "../components/ui/Sheet";
-import { getCurrentWorkflowStep, type UserRole } from "../lib/cpq-data";
-import { cn } from "../lib/utils";
-import { useCpqWorkspaceStorage } from "../utils/cpq-storage";
+} from "~/components/ui/Sheet";
+import { getCurrentWorkflowStep, type UserRole } from "~/lib/cpq-data";
+import { cn } from "~/lib/utils";
+import { useCpqWorkspaceStorage } from "~/utils/cpq-storage";
 
 interface NavigationItem {
   label: string;
@@ -46,11 +46,11 @@ function getEstimateIdFromPathname(pathname: string): string | null {
 }
 
 /**
- * Shared CPQ application shell.
+ * Renders the sidebar-aware shell inside the shared shadcn sidebar provider.
  */
-export default function MainLayout(): ReactElement {
+function MainLayoutShell(): ReactElement {
   const location = useLocation();
-  const [isWorkflowSheetOpen, setIsWorkflowSheetOpen] = useState(false);
+  const { isMobile, setOpenMobile } = useSidebar();
   const {
     workspace,
     resetWorkspace,
@@ -103,228 +103,215 @@ export default function MainLayout(): ReactElement {
   }, [location.pathname, setActiveEstimate, workspace.active_estimate_id]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="flex min-h-screen">
-        <div className="hidden w-[252px] shrink-0 lg:block">
-          <WorkflowRail
-            workspace={workspace}
-            onSelectStep={setActiveWorkflowStep}
-            onAdvance={advanceWorkflow}
-          />
-        </div>
+    <>
+      <Sidebar side="left" collapsible="offcanvas">
+        <WorkflowRail
+          workspace={workspace}
+          className="border-r-0"
+          onSelectStep={setActiveWorkflowStep}
+          onAdvance={advanceWorkflow}
+          onNavigate={
+            isMobile ? (): void => setOpenMobile(false) : undefined
+          }
+        />
+      </Sidebar>
 
-        <div className="flex min-h-screen min-w-0 flex-1 flex-col">
-          <header className="border-b border-stone-200 bg-card dark:border-zinc-800">
-            <div className="flex h-14 items-center gap-3 px-4 lg:px-6">
-              <Sheet open={isWorkflowSheetOpen} onOpenChange={setIsWorkflowSheetOpen}>
+      <SidebarInset className="min-h-screen min-w-0">
+        <header className="border-b border-stone-200 bg-card dark:border-zinc-800">
+          <div className="flex h-14 items-center gap-3 px-4 lg:px-6">
+            <SidebarTrigger aria-label="Toggle workflow sidebar" />
+
+            <Link
+              to="/"
+              className="flex min-w-0 items-center gap-3 text-stone-900 dark:text-zinc-100"
+            >
+              <div className="flex h-8 w-8 items-center justify-center rounded-md border border-stone-300 bg-stone-100 text-xs font-semibold dark:border-zinc-700 dark:bg-zinc-900">
+                CW
+              </div>
+              <div className="min-w-0">
+                <div className="truncate text-sm font-semibold">
+                  Customware CPQ
+                </div>
+              </div>
+            </Link>
+
+            <nav className="ml-4 hidden items-center gap-1 md:flex">
+              {navigationItems.map((item) => (
+                <NavLink
+                  key={item.href}
+                  to={item.href}
+                  className={({ isActive }): string =>
+                    cn(
+                      "rounded-md px-3 py-2 text-sm font-medium text-stone-600 transition-colors duration-150 hover:bg-stone-100 hover:text-stone-900 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-zinc-100",
+                      (isActive || item.matches(location.pathname)) &&
+                        "bg-stone-100 text-stone-900 dark:bg-zinc-900 dark:text-zinc-100",
+                    )
+                  }
+                >
+                  {item.label}
+                </NavLink>
+              ))}
+            </nav>
+
+            <div className="ml-auto flex items-center gap-2">
+              <Button asChild className="hidden md:inline-flex">
+                <Link to={createHref}>Create</Link>
+              </Button>
+
+              <Sheet>
                 <SheetTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    className="lg:hidden"
-                    aria-label="Open workflow"
-                  >
-                    <Menu className="h-4 w-4" />
+                  <Button variant="outline" className="hidden sm:inline-flex">
+                    <span>View as Role</span>
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[260px] p-0" showCloseButton={false}>
-                  <SheetHeader className="sr-only">
-                    <SheetTitle>Workflow</SheetTitle>
+                <SheetContent>
+                  <SheetHeader>
+                    <SheetTitle>Role Preview</SheetTitle>
                     <SheetDescription>
-                      Review workflow sections and navigate between mocked CPQ stages.
+                      Switch the shell into a different CPQ role and preview the
+                      permissions that role would get.
                     </SheetDescription>
                   </SheetHeader>
-                  <WorkflowRail
-                    workspace={workspace}
-                    className="border-r-0"
-                    onSelectStep={setActiveWorkflowStep}
-                    onAdvance={advanceWorkflow}
-                    onNavigate={() => setIsWorkflowSheetOpen(false)}
-                  />
+                  <div className="space-y-4 px-4 pb-4">
+                    <Select
+                      value={workspace.ui.active_role}
+                      onChange={(value: string): void =>
+                        setActiveRole(value as UserRole)
+                      }
+                      options={[
+                        { label: "Admin", value: "admin" },
+                        { label: "Estimator", value: "estimator" },
+                        { label: "Approver", value: "approver" },
+                        { label: "Viewer", value: "viewer" },
+                      ]}
+                    />
+                    <div className="rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
+                      Active role:{" "}
+                      <span className="font-semibold capitalize text-stone-900 dark:text-zinc-100">
+                        {workspace.ui.active_role}
+                      </span>
+                    </div>
+                  </div>
                 </SheetContent>
               </Sheet>
 
-              <Link
-                to="/"
-                className="flex min-w-0 items-center gap-3 text-stone-900 dark:text-zinc-100"
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label="Theme utility"
+                onClick={toggleThemeMode}
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-md border border-stone-300 bg-stone-100 text-xs font-semibold dark:border-zinc-700 dark:bg-zinc-900">
-                  CW
-                </div>
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-semibold">
-                    Customware CPQ
+                {workspace.ui.theme_mode === "light" ? (
+                  <Moon className="h-4 w-4" />
+                ) : (
+                  <Sun className="h-4 w-4" />
+                )}
+              </Button>
+
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon-sm" aria-label="Help">
+                    <CircleHelp className="h-4 w-4" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent>
+                  <SheetHeader>
+                    <SheetTitle>Workspace Help</SheetTitle>
+                    <SheetDescription>
+                      This starter keeps all actions local-first. Every button
+                      either changes workspace state, navigates, or mocks a CPQ
+                      workflow outcome.
+                    </SheetDescription>
+                  </SheetHeader>
+                  <div className="space-y-3 px-4 pb-4 text-sm text-stone-600 dark:text-zinc-300">
+                    <div className="rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900">
+                      Current workflow step:{" "}
+                      <span className="font-semibold text-stone-900 dark:text-zinc-100">
+                        {currentWorkflowStep?.stepLabel ?? "Unavailable"}
+                      </span>
+                    </div>
+                    <div className="rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900">
+                      Use the left workflow rail to move through mocked stages,
+                      the role switcher to preview permissions, and the configure
+                      page to build quotes with persisted local data.
+                    </div>
                   </div>
-                </div>
-              </Link>
+                </SheetContent>
+              </Sheet>
 
-              <nav className="ml-4 hidden items-center gap-1 md:flex">
-                {navigationItems.map((item) => (
-                  <NavLink
-                    key={item.href}
-                    to={item.href}
-                    className={({ isActive }): string =>
-                      cn(
-                        "rounded-md px-3 py-2 text-sm font-medium text-stone-600 transition-colors duration-150 hover:bg-stone-100 hover:text-stone-900 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-zinc-100",
-                        (isActive || item.matches(location.pathname)) &&
-                          "bg-stone-100 text-stone-900 dark:bg-zinc-900 dark:text-zinc-100",
-                      )
-                    }
-                  >
-                    {item.label}
-                  </NavLink>
-                ))}
-              </nav>
-
-              <div className="ml-auto flex items-center gap-2">
-                <Button asChild className="hidden md:inline-flex">
-                  <Link to={createHref}>Create</Link>
-                </Button>
-
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button variant="outline" className="hidden sm:inline-flex">
-                      <span>View as Role</span>
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent>
-                    <SheetHeader>
-                      <SheetTitle>Role Preview</SheetTitle>
-                      <SheetDescription>
-                        Switch the shell into a different CPQ role and preview the
-                        permissions that role would get.
-                      </SheetDescription>
-                    </SheetHeader>
-                    <div className="space-y-4 px-4 pb-4">
-                      <Select
-                        value={workspace.ui.active_role}
-                        onChange={(value: string): void =>
-                          setActiveRole(value as UserRole)
-                        }
-                        options={[
-                          { label: "Admin", value: "admin" },
-                          { label: "Estimator", value: "estimator" },
-                          { label: "Approver", value: "approver" },
-                          { label: "Viewer", value: "viewer" },
-                        ]}
-                      />
-                      <div className="rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
-                        Active role:{" "}
-                        <span className="font-semibold capitalize text-stone-900 dark:text-zinc-100">
-                          {workspace.ui.active_role}
-                        </span>
-                      </div>
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon-sm" aria-label="User menu">
+                    <UserRound className="h-4 w-4" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent>
+                  <SheetHeader>
+                    <SheetTitle>Demo User</SheetTitle>
+                    <SheetDescription>
+                      Requestor workspace controls for the seeded CPQ starter.
+                    </SheetDescription>
+                  </SheetHeader>
+                  <div className="space-y-3 px-4 pb-4">
+                    <div className="rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
+                      Signed in as Demo User. Current role is{" "}
+                      <span className="font-semibold capitalize text-stone-900 dark:text-zinc-100">
+                        {workspace.ui.active_role}
+                      </span>
+                      .
                     </div>
-                  </SheetContent>
-                </Sheet>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-center"
+                      onClick={resetWorkspace}
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      <span>Reset Workspace</span>
+                    </Button>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+          </div>
 
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label="Theme utility"
-                  onClick={toggleThemeMode}
+          <div className="border-t border-stone-200 bg-stone-50 px-4 py-2 md:hidden dark:border-zinc-800 dark:bg-zinc-950">
+            <div className="flex items-center gap-2 overflow-x-auto">
+              {navigationItems.map((item) => (
+                <NavLink
+                  key={item.href}
+                  to={item.href}
+                  className={({ isActive }): string =>
+                    cn(
+                      "whitespace-nowrap rounded-md px-3 py-1.5 text-sm text-stone-600 transition-colors duration-150 hover:bg-stone-100 hover:text-stone-900 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-zinc-100",
+                      (isActive || item.matches(location.pathname)) &&
+                        "bg-stone-100 text-stone-900 dark:bg-zinc-900 dark:text-zinc-100",
+                    )
+                  }
                 >
-                  {workspace.ui.theme_mode === "light" ? (
-                    <Moon className="h-4 w-4" />
-                  ) : (
-                    <Sun className="h-4 w-4" />
-                  )}
-                </Button>
-
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button variant="ghost" size="icon-sm" aria-label="Help">
-                      <CircleHelp className="h-4 w-4" />
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent>
-                    <SheetHeader>
-                      <SheetTitle>Workspace Help</SheetTitle>
-                      <SheetDescription>
-                        This starter keeps all actions local-first. Every button
-                        either changes workspace state, navigates, or mocks a CPQ
-                        workflow outcome.
-                      </SheetDescription>
-                    </SheetHeader>
-                    <div className="space-y-3 px-4 pb-4 text-sm text-stone-600 dark:text-zinc-300">
-                      <div className="rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900">
-                        Current workflow step:{" "}
-                        <span className="font-semibold text-stone-900 dark:text-zinc-100">
-                          {currentWorkflowStep?.stepLabel ?? "Unavailable"}
-                        </span>
-                      </div>
-                      <div className="rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900">
-                        Use the left workflow rail to move through mocked stages,
-                        the role switcher to preview permissions, and the configure
-                        page to build quotes with persisted local data.
-                      </div>
-                    </div>
-                  </SheetContent>
-                </Sheet>
-
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button variant="ghost" size="icon-sm" aria-label="User menu">
-                      <UserRound className="h-4 w-4" />
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent>
-                    <SheetHeader>
-                      <SheetTitle>Demo User</SheetTitle>
-                      <SheetDescription>
-                        Requestor workspace controls for the seeded CPQ starter.
-                      </SheetDescription>
-                    </SheetHeader>
-                    <div className="space-y-3 px-4 pb-4">
-                      <div className="rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
-                        Signed in as Demo User. Current role is{" "}
-                        <span className="font-semibold capitalize text-stone-900 dark:text-zinc-100">
-                          {workspace.ui.active_role}
-                        </span>
-                        .
-                      </div>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-center"
-                        onClick={resetWorkspace}
-                      >
-                        <RotateCcw className="h-4 w-4" />
-                        <span>Reset Workspace</span>
-                      </Button>
-                    </div>
-                  </SheetContent>
-                </Sheet>
-              </div>
+                  {item.label}
+                </NavLink>
+              ))}
             </div>
+          </div>
+        </header>
 
-            <div className="border-t border-stone-200 bg-stone-50 px-4 py-2 md:hidden dark:border-zinc-800 dark:bg-zinc-950">
-              <div className="flex items-center gap-2 overflow-x-auto">
-                {navigationItems.map((item) => (
-                  <NavLink
-                    key={item.href}
-                    to={item.href}
-                    className={({ isActive }): string =>
-                      cn(
-                        "whitespace-nowrap rounded-md px-3 py-1.5 text-sm text-stone-600 transition-colors duration-150 hover:bg-stone-100 hover:text-stone-900 dark:text-zinc-300 dark:hover:bg-zinc-900 dark:hover:text-zinc-100",
-                        (isActive || item.matches(location.pathname)) &&
-                          "bg-stone-100 text-stone-900 dark:bg-zinc-900 dark:text-zinc-100",
-                      )
-                    }
-                  >
-                    {item.label}
-                  </NavLink>
-                ))}
-              </div>
-            </div>
-          </header>
+        <main className="min-w-0 flex-1 p-4 lg:p-6">
+          <div className="mx-auto w-full max-w-[1400px]">
+            <Outlet />
+          </div>
+        </main>
+      </SidebarInset>
+    </>
+  );
+}
 
-          <main className="min-w-0 flex-1 p-4 lg:p-6">
-            <div className="mx-auto w-full max-w-[1400px]">
-              <Outlet />
-            </div>
-          </main>
-        </div>
-      </div>
-    </div>
+/**
+ * Shared CPQ application shell.
+ */
+export default function MainLayout(): ReactElement {
+  return (
+    <SidebarProvider defaultOpen className="bg-background text-foreground">
+      <MainLayoutShell />
+    </SidebarProvider>
   );
 }

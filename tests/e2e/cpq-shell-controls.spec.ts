@@ -2,6 +2,30 @@ import { expect, test } from "@playwright/test";
 import { seedWorkspace } from "./support/cpq";
 
 test.describe("cpq shell controls e2e", () => {
+  test("hides and restores the desktop workflow sidebar", async ({ page }) => {
+    await page.goto("/");
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await seedWorkspace(page);
+    await page.reload();
+    await expect(page.getByText("Workflow")).toBeVisible();
+    const sidebarGap = page.locator('[data-slot="sidebar-gap"]').first();
+    const sidebarContainer = page.locator('[data-slot="sidebar-container"]').first();
+
+    await expect(sidebarGap).toHaveCSS("width", "256px");
+    await expect(sidebarContainer).toHaveCSS("left", "0px");
+
+    await page.getByRole("button", { name: "Toggle workflow sidebar" }).click();
+
+    await expect(sidebarGap).toHaveCSS("width", "0px");
+    await expect(sidebarContainer).toHaveCSS("left", "-256px");
+    await expect(page.getByRole("heading", { name: "DR INC" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Toggle workflow sidebar" }).click();
+
+    await expect(sidebarGap).toHaveCSS("width", "256px");
+    await expect(sidebarContainer).toHaveCSS("left", "0px");
+  });
+
   test("renders dark mode with neutral shell colors on desktop and mobile", async ({
     page,
   }) => {
@@ -48,8 +72,8 @@ test.describe("cpq shell controls e2e", () => {
     });
 
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.getByRole("button", { name: "Open workflow" }).click();
-    await expect(page.getByRole("dialog", { name: "Workflow" })).toBeVisible();
+    await page.getByRole("button", { name: "Toggle workflow sidebar" }).click();
+    await expect(page.getByRole("dialog", { name: "Sidebar" })).toBeVisible();
 
     const mobileColors = await readShellColors();
 
@@ -71,7 +95,7 @@ test.describe("cpq shell controls e2e", () => {
       page.getByText("Add packages or products to start the build."),
     ).toBeVisible();
 
-    await page.locator("main").getByRole("link", { name: "Dashboard" }).click();
+    await page.getByRole("navigation").getByRole("link", { name: "Dashboard" }).click();
 
     await expect(
       page.getByRole("heading", { name: "Opportunities (2)" }),
@@ -116,17 +140,17 @@ test.describe("cpq shell controls e2e", () => {
     await seedWorkspace(page);
     await page.reload();
 
-    await page.getByRole("button", { name: "Open workflow" }).click();
+    await page.getByRole("button", { name: "Toggle workflow sidebar" }).click();
 
-    await expect(page.getByRole("dialog", { name: "Workflow" })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Sidebar" })).toBeVisible();
 
     await page
-      .getByRole("dialog", { name: "Workflow" })
+      .getByRole("dialog", { name: "Sidebar" })
       .getByRole("button", { name: "Equipment Selected" })
       .click();
 
     await expect(page).toHaveURL(/\/configure\/est-001002$/);
     await expect(page.getByRole("heading", { name: "Configure" })).toBeVisible();
-    await expect(page.getByRole("dialog", { name: "Workflow" })).toHaveCount(0);
+    await expect(page.getByRole("dialog", { name: "Sidebar" })).toHaveCount(0);
   });
 });

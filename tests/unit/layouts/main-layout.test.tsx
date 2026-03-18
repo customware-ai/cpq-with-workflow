@@ -25,8 +25,21 @@ function createLayoutRouter(initialEntries: string[]): ReturnType<typeof createM
   );
 }
 
+/**
+ * Updates the mocked viewport width so the shadcn sidebar can switch between its
+ * desktop off-canvas behavior and mobile sheet behavior inside jsdom.
+ */
+function setViewportWidth(width: number): void {
+  Object.defineProperty(window, "innerWidth", {
+    configurable: true,
+    value: width,
+    writable: true,
+  });
+}
+
 describe("main layout", () => {
   beforeEach(() => {
+    setViewportWidth(1280);
     clearCpqWorkspaceFromStorage();
     seedCpqWorkspaceInStorage();
   });
@@ -52,13 +65,39 @@ describe("main layout", () => {
     expect(await screen.findByText("Configure body")).toBeInTheDocument();
   });
 
-  it("closes the mobile workflow sheet after selecting a workflow step", async () => {
+  it("collapses and restores the desktop workflow sidebar", async () => {
     const router = createLayoutRouter(["/"]);
     render(<RouterProvider router={router} />);
 
-    await userEvent.click(screen.getByRole("button", { name: "Open workflow" }));
+    const sidebarRoot = document.querySelector(
+      '[data-side="left"][data-slot="sidebar"]',
+    );
 
-    expect(await screen.findByRole("dialog", { name: "Workflow" })).toBeInTheDocument();
+    expect(sidebarRoot).toHaveAttribute("data-state", "expanded");
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Toggle workflow sidebar" }),
+    );
+
+    expect(sidebarRoot).toHaveAttribute("data-state", "collapsed");
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Toggle workflow sidebar" }),
+    );
+
+    expect(sidebarRoot).toHaveAttribute("data-state", "expanded");
+  });
+
+  it("closes the mobile workflow sheet after selecting a workflow step", async () => {
+    setViewportWidth(390);
+    const router = createLayoutRouter(["/"]);
+    render(<RouterProvider router={router} />);
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Toggle workflow sidebar" }),
+    );
+
+    expect(await screen.findByRole("dialog", { name: "Sidebar" })).toBeInTheDocument();
 
     const workflowButtons = screen.getAllByRole("button", {
       name: "Equipment Selected",
@@ -68,7 +107,7 @@ describe("main layout", () => {
     await userEvent.click(mobileWorkflowButton!);
 
     expect(await screen.findByText("Configure body")).toBeInTheDocument();
-    expect(screen.queryByRole("dialog", { name: "Workflow" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Sidebar" })).not.toBeInTheDocument();
   });
 
   it("toggles the persisted theme mode from the header control", async () => {
