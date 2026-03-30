@@ -219,6 +219,26 @@ describe("main layout", () => {
     expect(document.documentElement.classList.contains("dark")).toBe(true);
   });
 
+  it("opens and closes the seeded workspace user dropdown from the header icon", async () => {
+    const router = createLayoutRouter(["/workflow/customer-collection"]);
+    render(<RouterProvider router={router} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "User menu" }));
+
+    expect(
+      await screen.findByText("Seeded Workspace User", { exact: true }),
+    ).toBeVisible();
+    expect(
+      screen.getByText("Workspace controls for the seeded CPQ example."),
+    ).toBeVisible();
+
+    await userEvent.keyboard("{Escape}");
+
+    expect(
+      screen.queryByText("Seeded Workspace User", { exact: true }),
+    ).not.toBeInTheDocument();
+  });
+
   it("keeps role preview in memory instead of persisting it", async () => {
     const router = createLayoutRouter(["/workflow/customer-collection"]);
     render(<RouterProvider router={router} />);

@@ -2,6 +2,14 @@ import { sql } from "drizzle-orm";
 import { index, integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 /**
+ * Template backend note:
+ *
+ * This schema is sample-only. It exists so the template shows a complete
+ * contract → query → service → route chain. A consuming app can replace the
+ * table shape with its own domain tables without needing to preserve this one.
+ */
+
+/**
  * Template example table used by the CPQ estimate contract/service/query flow.
  */
 export const estimates = sqliteTable(

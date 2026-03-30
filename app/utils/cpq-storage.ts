@@ -239,6 +239,9 @@ export function useCpqWorkspaceStorage(): UseCpqWorkspaceStorageResult {
 
   /**
    * Restores the default seeded workspace.
+   *
+   * This is a development and test helper for the sample workspace seed, not
+   * a product requirement for the eventual backend-backed CPQ app.
    */
   const resetWorkspace = (): void => {
     setRolePreviewOverride(null);

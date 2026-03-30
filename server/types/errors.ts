@@ -1,5 +1,13 @@
 /**
- * Typed database failure contract.
+ * Template backend note:
+ *
+ * These error contracts are sample-only helpers for the example API slice.
+ * They show how the service layer maps database and validation failures into a
+ * typed transport-friendly shape.
+ */
+
+/**
+ * Typed database failure contract for the sample backend slice.
  */
 export type DatabaseError = {
   type: "DATABASE_ERROR";
@@ -8,7 +16,7 @@ export type DatabaseError = {
 };
 
 /**
- * Typed validation failure contract.
+ * Typed validation failure contract for the sample backend slice.
  */
 export type ValidationError = {
   type: "VALIDATION_ERROR";
@@ -17,6 +25,7 @@ export type ValidationError = {
 };
 
 /**
- * App-level error union used by services and route adapters.
+ * App-level error union used by services and route adapters in the example
+ * backend slice.
  */
 export type AppError = DatabaseError | ValidationError;

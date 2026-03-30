@@ -9,6 +9,15 @@ import { getDatabase } from "../index.js";
 import { estimates } from "../schemas.js";
 
 /**
+ * Template backend note:
+ *
+ * These query helpers are sample-only. They show how the template wires
+ * Drizzle, neverthrow, and runtime validation together, but they are not tied
+ * to any specific product domain and can be deleted when the real query layer
+ * exists.
+ */
+
+/**
  * Maps unknown errors to a typed database error contract.
  */
 function mapDatabaseError(message: string, error: unknown): DatabaseError {
@@ -21,6 +30,7 @@ function mapDatabaseError(message: string, error: unknown): DatabaseError {
 
 /**
  * Reads estimates with optional status and text search filters.
+ * This is sample query behavior for the example API slice.
  */
 export function listEstimateRows(
   filters: ListEstimatesFilter,
@@ -65,6 +75,7 @@ export function listEstimateRows(
 
 /**
  * Inserts an estimate and returns the created row.
+ * Keep this as a reference for the sample API slice only.
  */
 export function createEstimateRow(
   input: CreateEstimateInput,

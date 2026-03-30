@@ -1,9 +1,17 @@
 // THIS LAYOUT WRAPS MOCK SAMPLE SHELL STATE ONLY. REMOVE IT AND RE-ADD THE REAL REQUEST UI WHEN NEEDED.
 import { useEffect, type ReactElement } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
-import { CircleHelp, Moon, RotateCcw, Sun, UserRound } from "lucide-react";
+import { Moon, Sun, UserRound } from "lucide-react";
 import { WorkflowRail } from "~/components/cpq/WorkflowRail";
 import { Button } from "~/components/ui/Button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverDescription,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from "~/components/ui/Popover";
 import { Select } from "~/components/ui/Select";
 import {
   Sidebar,
@@ -19,7 +27,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "~/components/ui/Sheet";
-import { getCurrentWorkflowStep, type UserRole } from "~/lib/cpq-data";
+import { type UserRole } from "~/lib/cpq-data";
 import { cn } from "~/lib/utils";
 import { useCpqWorkspaceStorage } from "~/utils/cpq-storage";
 
@@ -29,6 +37,50 @@ interface NavigationItem {
   matches: (pathname: string) => boolean;
 }
 
+interface WorkspaceUserMenuProps {
+  role: UserRole;
+}
+
+/**
+ * Renders the seeded workspace user summary as a small dropdown instead of a
+ * sheet so the header stays compact.
+ */
+function WorkspaceUserMenu({ role }: WorkspaceUserMenuProps): ReactElement {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="icon-sm" aria-label="User menu">
+          <UserRound className="h-4 w-4" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-72 p-0">
+        <PopoverHeader className="px-4 py-3">
+          <PopoverTitle className="text-sm font-semibold text-stone-900 dark:text-zinc-100">
+            Seeded Workspace User
+          </PopoverTitle>
+          <PopoverDescription className="text-sm text-stone-500 dark:text-zinc-400">
+            Workspace controls for the seeded CPQ example.
+          </PopoverDescription>
+        </PopoverHeader>
+        <div className="space-y-3 px-4 py-4 text-sm text-stone-600 dark:text-zinc-300">
+          <div>
+            <div className="text-stone-500 dark:text-zinc-400">Signed in as</div>
+            <div className="mt-1 font-medium text-stone-900 dark:text-zinc-100">
+              Seeded workspace user
+            </div>
+          </div>
+          <div>
+            <div className="text-stone-500 dark:text-zinc-400">Current role</div>
+            <div className="mt-1 font-semibold capitalize text-stone-900 dark:text-zinc-100">
+              {role}
+            </div>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 /**
  * Renders the sidebar-aware shell inside the shared shadcn sidebar provider.
  */
@@ -36,11 +88,9 @@ function MainLayoutShell(): ReactElement {
   const location = useLocation();
   const {
     workspace,
-    resetWorkspace,
     setActiveRole,
     toggleThemeMode,
   } = useCpqWorkspaceStorage();
-  const currentWorkflowStep = getCurrentWorkflowStep(workspace);
 
   // Keep a single shell nav model in one place so future routes can attach to
   // the shared desktop and mobile header patterns without duplicating logic.
@@ -110,10 +160,10 @@ function MainLayoutShell(): ReactElement {
                 </SheetTrigger>
                 <SheetContent>
                   <SheetHeader>
-                    <SheetTitle>Role Preview</SheetTitle>
+                    <SheetTitle>Workspace Access</SheetTitle>
                     <SheetDescription>
-                      Switch the shell into a different CPQ role and preview the
-                      permissions that role would get.
+                      Preview the sample role state that ships with the template.
+                      Remove this control when the real auth flow is wired.
                     </SheetDescription>
                   </SheetHeader>
                   <div className="space-y-4 px-4 pb-4">
@@ -151,71 +201,7 @@ function MainLayoutShell(): ReactElement {
                   <Sun className="h-4 w-4" />
                 )}
               </Button>
-
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon-sm" aria-label="Help">
-                    <CircleHelp className="h-4 w-4" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent>
-                  <SheetHeader>
-                    <SheetTitle>Workspace Help</SheetTitle>
-                    <SheetDescription>
-                      This example keeps all actions local-first. Every button
-                      either changes workspace state, navigates, or advances an
-                      example CPQ workflow outcome.
-                    </SheetDescription>
-                  </SheetHeader>
-                  <div className="space-y-3 px-4 pb-4 text-sm text-stone-600 dark:text-zinc-300">
-                    <div className="rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900">
-                      Current workflow step:{" "}
-                      <span className="font-semibold text-stone-900 dark:text-zinc-100">
-                        {currentWorkflowStep?.stepLabel ?? "Unavailable"}
-                      </span>
-                    </div>
-                    <div className="rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900">
-                      This starter ships with one pre-configuration stage,
-                      starter scope actions, and a live quote summary. Extend
-                      that first stage before adding more routes.
-                    </div>
-                  </div>
-                </SheetContent>
-              </Sheet>
-
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon-sm" aria-label="User menu">
-                    <UserRound className="h-4 w-4" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent>
-                  <SheetHeader>
-                    <SheetTitle>Example User</SheetTitle>
-                    <SheetDescription>
-                      Requestor workspace controls for the seeded CPQ example.
-                    </SheetDescription>
-                  </SheetHeader>
-                  <div className="space-y-3 px-4 pb-4">
-                    {/* THIS HEADER CONTROL DATA IS SAMPLE-ONLY MOCK STATE. REMOVE IT AND RE-ADD THE REAL REQUEST WORKFLOW WHEN NEEDED. */}
-                    <div className="rounded-lg border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-600 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
-                      Signed in as Example User. Current role is{" "}
-                      <span className="font-semibold capitalize text-stone-900 dark:text-zinc-100">
-                        {workspace.ui.active_role}
-                      </span>
-                      .
-                    </div>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-center"
-                      onClick={resetWorkspace}
-                    >
-                      <RotateCcw className="h-4 w-4" />
-                      <span>Reset Workspace</span>
-                    </Button>
-                  </div>
-                </SheetContent>
-              </Sheet>
+              <WorkspaceUserMenu role={workspace.ui.active_role} />
             </div>
           </div>
 

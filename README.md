@@ -2,7 +2,7 @@
 
 **This is a code style and architecture template repository.** Use it as a reference for coding patterns, project structure, and development standards when building production applications.
 
-The template demonstrates a simplified, modern stack with React Router v7, TypeScript, Tailwind CSS, Hono, tRPC, and SQLite via Drizzle + better-sqlite3.
+The template demonstrates a simplified, modern stack with React Router v7, TypeScript, Tailwind CSS, Hono, tRPC, and SQLite via Drizzle + better-sqlite3. The `app/` shell is the starter surface; the `server/` tree is an example backend slice that can be kept, replaced, or removed when your real API lands.
 
 > **⚠️ Important**: This is a **template repository** showcasing patterns and structure, not a feature-complete product.
 
@@ -29,7 +29,7 @@ The template demonstrates a simplified, modern stack with React Router v7, TypeS
 
 1. Study the patterns in `app/`, `server/`, and `tests/`
 2. Copy the structure into your own project
-3. Replace the example estimate slice with your domain modules
+3. Replace or delete the sample estimate slice when you wire your real backend
 4. Keep strict contracts and Result-based error handling
 5. Follow [AGENTS.md](./AGENTS.md) for development workflow
 
@@ -38,7 +38,7 @@ The template demonstrates a simplified, modern stack with React Router v7, TypeS
 ### ✅ Fully Functional (Study These):
 
 - **UI shell and workflow pages** - Shared `MainLayout` + route-backed CPQ workflow starter
-- **Server example slice** - `estimate` contract/query/service/tRPC route chain
+- **Server example slice** - `estimate` contract/query/service/tRPC route chain, kept as reference wiring only
 - **Database layer** - Drizzle schema + generated SQL migrations + runner
 - **Quality gates** - Typecheck, lint, build, and test workflows
 - **Component library** - Tested reusable UI building blocks
@@ -46,6 +46,7 @@ The template demonstrates a simplified, modern stack with React Router v7, TypeS
 ### 📐 Pattern Scaffolding:
 
 - **tRPC client/provider files in `app/lib/`** - Available as typed integration scaffolding
+- **Example backend note** - The `server/` files are intentionally sample-only until a consuming project swaps in its own API contract
 - **Single-module backend design** - Intentionally minimal for extension
 
 ## Template Features & Patterns
@@ -73,7 +74,7 @@ This starter is set up as a **CPQ template built around a workflow system**.
 
 The seeded example currently starts with small stages so the template is easy to understand, but the workflow engine is **not** limited to two steps per stage. Teams can add more stages and more steps by extending the workflow data shape.
 
-Today the workflow state is stored locally in browser storage so the template works without backend setup. Teams building on top of this template can keep the same workflow/page structure and replace the local storage source with their own database-backed workflow data.
+Today the workflow state is stored locally in browser storage so the template works without backend setup. Teams building on top of this template can keep the same workflow/page structure and replace the local storage source with their own database-backed workflow data. The visible workflow seed is just an example starter, not a product opinion.
 
 The workflow behavior itself now lives in a separate core module, `app/lib/workflow-engine.ts`. The starter CPQ data layer feeds stage/step definitions into that engine, and the current template persists the runtime state in local storage. Teams can keep the same engine and swap only the data source, or move the same engine concepts to the backend if they want the workflow to execute server-side.
 
@@ -141,23 +142,23 @@ app/
 
 server/
 ├── contracts/
-│   ├── estimate.ts            # Zod runtime contracts
+│   ├── estimate.ts            # Sample Zod runtime contracts for the example API slice
 │   └── index.ts
 ├── db/
-│   ├── index.ts               # Drizzle + better-sqlite3 init
-│   ├── schemas.ts             # Drizzle table schema
+│   ├── index.ts               # Sample Drizzle + better-sqlite3 init for the example API slice
+│   ├── schemas.ts             # Sample Drizzle table schema
 │   ├── queries/
-│   │   └── estimates.ts       # Query layer (ResultAsync)
+│   │   └── estimates.ts       # Sample query layer (ResultAsync)
 │   ├── migrations/            # Generated SQL + drizzle metadata
-│   └── migrate.ts             # Migration runner
+│   └── migrate.ts             # Sample migration runner for the example API slice
 ├── services/
-│   └── estimate.ts            # Business logic
+│   └── estimate.ts            # Sample business logic for the example API slice
 ├── trpc/
-│   └── router.ts              # API procedures
+│   └── router.ts              # Sample API procedures for the example backend slice
 ├── types/
 │   └── errors.ts              # Shared app error contracts
-├── index.ts                   # Hono app setup
-├── start.ts                   # Server entrypoint
+├── index.ts                   # Sample Hono app setup for the example backend slice
+├── start.ts                   # Sample server entrypoint
 └── tsconfig.json
 
 tests/
@@ -222,7 +223,7 @@ All tests use Vitest (and React Testing Library for UI).
 
 ## 🏗️ Example Module
 
-The repository includes one cohesive example module:
+The repository includes one cohesive sample-only module:
 
 - **Estimate**
   - Contract: `server/contracts/estimate.ts`
@@ -230,7 +231,7 @@ The repository includes one cohesive example module:
   - Service: `server/services/estimate.ts`
   - API route: `server/trpc/router.ts`
 
-Use this as the canonical pattern when adding your own modules.
+Use this as the canonical pattern when adding your own modules, or replace it entirely when your application ships its own API contracts and persistence.
 
 ## 📖 Documentation
 

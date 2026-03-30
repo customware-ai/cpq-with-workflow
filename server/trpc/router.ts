@@ -6,6 +6,15 @@ import {
 import { createEstimate, listEstimates } from "../services/estimate.js";
 import type { AppError } from "../types/errors.js";
 
+/**
+ * Template backend note:
+ *
+ * This router is the sample API contract for the example backend slice. It is
+ * intentionally small so the template shows how procedures hang together,
+ * while still making it obvious that a consuming app can replace the whole
+ * router with its own CPQ contract surface.
+ */
+
 const t = initTRPC.create();
 
 /**
@@ -27,6 +36,8 @@ function toTrpcError(error: AppError): TRPCError {
 
 /**
  * Minimal template router with one related CPQ estimate example flow.
+ * The procedures below are sample-only and exist to show wiring, not product
+ * opinion.
  */
 export const appRouter = t.router({
   listEstimates: t.procedure

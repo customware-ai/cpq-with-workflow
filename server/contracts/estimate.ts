@@ -1,12 +1,21 @@
 import { z } from "zod";
 
 /**
- * Estimate status enum shared across contracts, services, and queries.
+ * Template backend note:
+ *
+ * These contracts are intentionally a sample API slice. They show how a
+ * consuming CPQ app would structure runtime validation, but they are not
+ * required for the initial frontend shell and should be replaced wholesale
+ * when the real API contract is introduced.
+ */
+
+/**
+ * Sample estimate status enum shared across the example backend slice.
  */
 export const EstimateStatusSchema = z.enum(["draft", "review", "approved"]);
 
 /**
- * Runtime contract for a persisted estimate row.
+ * Sample runtime contract for a persisted estimate row.
  */
 export const EstimateSchema = z.object({
   id: z.number().int().positive(),
@@ -24,7 +33,7 @@ export const EstimateSchema = z.object({
 });
 
 /**
- * Runtime contract for estimate creation input.
+ * Sample runtime contract for estimate creation input.
  */
 export const CreateEstimateInputSchema = z.object({
   estimate_number: z.string().min(1).max(80),
@@ -39,7 +48,7 @@ export const CreateEstimateInputSchema = z.object({
 });
 
 /**
- * Runtime contract for estimate list filters.
+ * Sample runtime contract for estimate list filters.
  */
 export const ListEstimatesFilterSchema = z.object({
   status: EstimateStatusSchema.optional(),

@@ -9,6 +9,14 @@ import { createEstimateRow, listEstimateRows } from "../db/queries/estimates.js"
 import type { AppError, ValidationError } from "../types/errors.js";
 
 /**
+ * Template backend note:
+ *
+ * This service module is a sample orchestration layer. It exists so the
+ * template demonstrates a realistic service boundary, but the consuming app
+ * should replace it when its own CPQ domain rules are known.
+ */
+
+/**
  * Converts zod issues into a typed validation error payload.
  */
 function validationError(message: string, issues: string[]): ValidationError {
@@ -21,6 +29,7 @@ function validationError(message: string, issues: string[]): ValidationError {
 
 /**
  * Validates and returns estimates for the template example service.
+ * This is sample list behavior, not a product-specific decision.
  */
 export function listEstimates(
   input: unknown,
@@ -50,6 +59,8 @@ export function listEstimates(
 
 /**
  * Validates input and creates a single estimate.
+ * Keep this as the sample mutation path until the consuming app defines its
+ * own backend contract.
  */
 export function createEstimate(input: unknown): ResultAsync<Estimate, AppError> {
   const createResult = CreateEstimateInputSchema.safeParse(input);
